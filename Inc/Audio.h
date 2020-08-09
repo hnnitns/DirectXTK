@@ -65,7 +65,7 @@ namespace DirectX
         size_t  playingOneShots;        // Number of one-shot sounds currently playing
         size_t  playingInstances;       // Number of sound effect instances currently playing
         size_t  allocatedInstances;     // Number of SoundEffectInstance allocated
-        size_t  allocatedVoices;        // Number of XAudio2 voices allocated (standard, 3D, one-shots, and idle one-shots) 
+        size_t  allocatedVoices;        // Number of XAudio2 voices allocated (standard, 3D, one-shots, and idle one-shots)
         size_t  allocatedVoices3d;      // Number of XAudio2 voices allocated for 3D
         size_t  allocatedVoicesOneShot; // Number of XAudio2 voices allocated for one-shot sounds
         size_t  allocatedVoicesIdle;    // Number of XAudio2 voices allocated for one-shot sounds but not currently in use
@@ -609,7 +609,7 @@ namespace DirectX
 
         virtual ~SoundEffectInstance();
 
-        void __cdecl Play(bool loop = false);
+        void __cdecl Play(bool loop = false, const float start_pos = 0.f);
         void __cdecl Stop(bool immediate = true) noexcept;
         void __cdecl Pause() noexcept;
         void __cdecl Resume();
@@ -621,8 +621,15 @@ namespace DirectX
         void __cdecl Apply3D(const AudioListener& listener, const AudioEmitter& emitter, bool rhcoords = true);
 
         bool __cdecl IsLooped() const noexcept;
+        void __cdecl EndLoop();
 
         SoundState __cdecl GetState() noexcept;
+        DWORD GetSoundLength();
+        XAUDIO2_BUFFER __cdecl GetXaudio2Buffer();
+        bool __cdecl GetLooped() const noexcept;
+        float __cdecl GetVolume();
+        float __cdecl GetPitch();
+        float __cdecl GetPan();
 
         IVoiceNotify* __cdecl GetVoiceNotify() const noexcept;
 

@@ -69,7 +69,44 @@ public:
         }
     }
 
-    void Play(bool loop);
+    void Play(bool loop, const float start_pos);
+    DWORD GetSoundLength();
+
+    XAUDIO2_BUFFER GetXaudio2Buffer()
+    {
+        XAUDIO2_BUFFER buffer;
+
+#if defined(_XBOX_ONE) || (_WIN32_WINNT < _WIN32_WINNT_WIN8) || (_WIN32_WINNT >= _WIN32_WINNT_WIN10)
+
+        XAUDIO2_BUFFER_WMA wmaBuffer;
+
+        if (mWaveBank)
+        {
+            mWaveBank->FillSubmitBuffer(mIndex, buffer, wmaBuffer);
+        }
+        else
+        {
+            assert(mEffect != nullptr);
+
+            mEffect->FillSubmitBuffer(buffer, wmaBuffer);
+        }
+
+#else
+
+        if (mWaveBank)
+        {
+            mWaveBank->FillSubmitBuffer(mIndex, buffer);
+        }
+        else
+        {
+            assert(mEffect != 0);
+            mEffect->FillSubmitBuffer(buffer);
+        }
+
+#endif
+
+        return buffer;
+    }
 
     // IVoiceNotify
     void __cdecl OnBufferEnd() override
@@ -116,6 +153,8 @@ public:
         mEffect = nullptr;
     }
 
+    bool __cdecl GetLooped() const noexcept { return mLooped; }
+
     SoundEffectInstanceBase         mBase;
     SoundEffect*                    mEffect;
     WaveBank*                       mWaveBank;
@@ -124,7 +163,7 @@ public:
 };
 
 
-void SoundEffectInstance::Impl::Play(bool loop)
+void SoundEffectInstance::Impl::Play(bool loop, const float start_pos)
 {
     if (!mBase.voice)
     {
@@ -160,6 +199,8 @@ void SoundEffectInstance::Impl::Play(bool loop)
         assert(mEffect != nullptr);
         iswma = mEffect->FillSubmitBuffer(buffer, wmaBuffer);
     }
+
+    buffer.PlayBegin = static_cast<UINT32>(mEffect->GetFormat()->nSamplesPerSec * start_pos);
 
 #else // !xWMA
 
@@ -219,6 +260,47 @@ void SoundEffectInstance::Impl::Play(bool loop)
     }
 }
 
+DWORD SoundEffectInstance::Impl::GetSoundLength()
+{
+    XAUDIO2_BUFFER buffer;
+
+#if defined(_XBOX_ONE) || (_WIN32_WINNT < _WIN32_WINNT_WIN8) || (_WIN32_WINNT >= _WIN32_WINNT_WIN10)
+
+    XAUDIO2_BUFFER_WMA wmaBuffer;
+
+    if (mWaveBank)
+    {
+        mWaveBank->FillSubmitBuffer(mIndex, buffer, wmaBuffer);
+
+        return (buffer.AudioBytes / mEffect->GetFormat()->nAvgBytesPerSec);
+    }
+    else
+    {
+        assert(mEffect != nullptr);
+
+        mEffect->FillSubmitBuffer(buffer, wmaBuffer);
+
+        return (buffer.AudioBytes / mEffect->GetFormat()->nAvgBytesPerSec);
+    }
+
+#else
+
+    if (mWaveBank)
+    {
+        mWaveBank->FillSubmitBuffer(mIndex, buffer);
+
+        return (buffer.AudioBytes / mEffect->GetFormat()->nAvgBytesPerSec);
+    }
+    else
+    {
+        assert(mEffect != 0);
+        mEffect->FillSubmitBuffer(buffer);
+
+        return (buffer.AudioBytes / mEffect->GetFormat()->nAvgBytesPerSec);
+    }
+
+#endif
+}
 
 //--------------------------------------------------------------------------------------
 // SoundEffectInstance
@@ -274,11 +356,41 @@ SoundEffectInstance::~SoundEffectInstance()
 
 
 // Public methods.
-void SoundEffectInstance::Play(bool loop)
+void SoundEffectInstance::Play(bool loop, const float start_pos)
 {
-    pImpl->Play(loop);
+    if (start_pos < pImpl->GetSoundLength())
+        pImpl->Play(loop, start_pos);
 }
 
+XAUDIO2_BUFFER SoundEffectInstance::GetXaudio2Buffer()
+{
+    return pImpl->GetXaudio2Buffer();
+}
+
+bool __cdecl DirectX::SoundEffectInstance::GetLooped() const noexcept
+{
+    return pImpl->GetLooped();
+}
+
+float __cdecl DirectX::SoundEffectInstance::GetVolume()
+{
+    return pImpl->mBase.GetVolume();
+}
+
+float __cdecl DirectX::SoundEffectInstance::GetPitch()
+{
+    return pImpl->mBase.GetPitch();
+}
+
+float __cdecl DirectX::SoundEffectInstance::GetPan()
+{
+    return pImpl->mBase.GetPan();
+}
+
+DWORD DirectX::SoundEffectInstance::GetSoundLength()
+{
+    return static_cast<DWORD>(pImpl->GetSoundLength() * ((pImpl->mBase.GetPitch() / 2.f) + 1.f));
+}
 
 void SoundEffectInstance::Stop(bool immediate) noexcept
 {
@@ -326,6 +438,12 @@ void SoundEffectInstance::Apply3D(const AudioListener& listener, const AudioEmit
 bool SoundEffectInstance::IsLooped() const noexcept
 {
     return pImpl->mLooped;
+}
+
+void __cdecl DirectX::SoundEffectInstance::EndLoop()
+{
+    pImpl->mBase.voice->ExitLoop();
+    pImpl->mLooped = false;
 }
 
 

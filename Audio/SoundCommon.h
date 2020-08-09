@@ -208,7 +208,7 @@ namespace DirectX
             }
         }
 
-        void Pause() noexcept 
+        void Pause() noexcept
         {
             if (voice && state == PLAYING)
             {
@@ -240,6 +240,7 @@ namespace DirectX
                 ThrowIfFailed(hr);
             }
         }
+        float GetVolume() const noexcept { return mVolume; }
 
         void SetPitch(float pitch)
         {
@@ -261,8 +262,10 @@ namespace DirectX
                 ThrowIfFailed(hr);
             }
         }
+        float GetPitch() const noexcept { return mPitch; }
 
         void SetPan(float pan);
+        float GetPan() const noexcept { return mPan; }
 
         void Apply3D(const AudioListener& listener, const AudioEmitter& emitter, bool rhcoords);
 
