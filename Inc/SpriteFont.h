@@ -67,6 +67,8 @@ namespace DirectX
         Glyph const* __cdecl FindGlyph(wchar_t character) const;
         void __cdecl GetSpriteSheet(ID3D11ShaderResourceView** texture) const;
 
+        const auto& GetImpl() const noexcept { return pImpl; }
+
         // Describes a single character glyph.
         struct Glyph
         {
@@ -75,6 +77,45 @@ namespace DirectX
             float XOffset;
             float YOffset;
             float XAdvance;
+        };
+        // Internal SpriteFont implementation class.
+        class Impl
+        {
+        public:
+            Impl(_In_ ID3D11Device* device,
+                _In_ class BinaryReader* reader,
+                bool forceSRGB) noexcept(false);
+            Impl(_In_ ID3D11ShaderResourceView* texture,
+                _In_reads_(glyphCount) Glyph const* glyphs,
+                size_t glyphCount,
+                float lineSpacing) noexcept(false);
+
+            Glyph const* FindGlyph(wchar_t character) const;
+
+            void SetDefaultCharacter(wchar_t character);
+
+            template<typename TAction>
+            void ForEachGlyph(_In_z_ wchar_t const* text, TAction action, bool ignoreWhitespace) const;
+
+            void CreateTextureResource(_In_ ID3D11Device* device,
+                uint32_t width, uint32_t height,
+                DXGI_FORMAT format,
+                uint32_t stride, uint32_t rows,
+                _In_reads_(stride* rows) const uint8_t* data) noexcept(false);
+
+            const wchar_t* ConvertUTF8(_In_z_ const char* text) noexcept(false);
+
+            // Fields.
+            Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> texture;
+            D3D11_TEXTURE2D_DESC tex2d_desc;
+            std::vector<Glyph> glyphs;
+            std::vector<uint32_t> glyphsIndex;
+            Glyph const* defaultGlyph;
+            float lineSpacing;
+
+        private:
+            size_t utfBufferSize;
+            std::unique_ptr<wchar_t[]> utfBuffer;
         };
 
 

@@ -20,47 +20,6 @@
 using namespace DirectX;
 using Microsoft::WRL::ComPtr;
 
-
-// Internal SpriteFont implementation class.
-class SpriteFont::Impl
-{
-public:
-    Impl(_In_ ID3D11Device* device,
-        _In_ BinaryReader* reader,
-        bool forceSRGB) noexcept(false);
-    Impl(_In_ ID3D11ShaderResourceView* texture,
-        _In_reads_(glyphCount) Glyph const* glyphs,
-        size_t glyphCount,
-        float lineSpacing) noexcept(false);
-
-    Glyph const* FindGlyph(wchar_t character) const;
-
-    void SetDefaultCharacter(wchar_t character);
-
-    template<typename TAction>
-    void ForEachGlyph(_In_z_ wchar_t const* text, TAction action, bool ignoreWhitespace) const;
-
-    void CreateTextureResource(_In_ ID3D11Device* device,
-        uint32_t width, uint32_t height,
-        DXGI_FORMAT format,
-        uint32_t stride, uint32_t rows,
-        _In_reads_(stride * rows) const uint8_t* data) noexcept(false);
-
-    const wchar_t* ConvertUTF8(_In_z_ const char *text) noexcept(false);
-
-    // Fields.
-    ComPtr<ID3D11ShaderResourceView> texture;
-    std::vector<Glyph> glyphs;
-    std::vector<uint32_t> glyphsIndex;
-    Glyph const* defaultGlyph;
-    float lineSpacing;
-
-private:
-    size_t utfBufferSize;
-    std::unique_ptr<wchar_t[]> utfBuffer;
-};
-
-
 // Constants.
 const XMFLOAT2 SpriteFont::Float2Zero(0, 0);
 
@@ -306,21 +265,21 @@ void SpriteFont::Impl::CreateTextureResource(
         throw std::overflow_error("Invalid .spritefont file");
     }
 
-    D3D11_TEXTURE2D_DESC desc = {};
-    desc.Width = width;
-    desc.Height = height;
-    desc.MipLevels = 1;
-    desc.ArraySize = 1;
-    desc.Format = format;
-    desc.SampleDesc.Count = 1;
-    desc.Usage = D3D11_USAGE_IMMUTABLE;
-    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    tex2d_desc = {};
+    tex2d_desc.Width = width;
+    tex2d_desc.Height = height;
+    tex2d_desc.MipLevels = 1;
+    tex2d_desc.ArraySize = 1;
+    tex2d_desc.Format = format;
+    tex2d_desc.SampleDesc.Count = 1;
+    tex2d_desc.Usage = D3D11_USAGE_IMMUTABLE;
+    tex2d_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
     D3D11_SUBRESOURCE_DATA initData = { data, stride, static_cast<UINT>(sliceBytes) };
 
     ComPtr<ID3D11Texture2D> texture2D;
     ThrowIfFailed(
-        device->CreateTexture2D(&desc, &initData, &texture2D)
+        device->CreateTexture2D(&tex2d_desc, &initData, &texture2D)
     );
 
     CD3D11_SHADER_RESOURCE_VIEW_DESC viewDesc(D3D11_SRV_DIMENSION_TEXTURE2D, format);
