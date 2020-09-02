@@ -149,13 +149,13 @@ public:
         {
             if (mGamePad[j])
             {
-                ComPtr<IGameController> ctrl;
-                HRESULT hr = mGamePad[j].As(&ctrl);
-                if (SUCCEEDED(hr) && ctrl)
-                {
-                    (void)ctrl->remove_UserChanged(mUserChangeToken[j]);
-                    mUserChangeToken[j].value = 0;
-                }
+                //ComPtr<IGameController> ctrl;
+                //HRESULT hr = mGamePad[j].As(&ctrl);
+                //if (SUCCEEDED(hr) && ctrl)
+                //{
+                //    (void)ctrl->remove_UserChanged(mUserChangeToken[j]);
+                //    mUserChangeToken[j].value = 0;
+                //}
 
                 mGamePad[j].Reset();
             }
@@ -1302,6 +1302,7 @@ GamePad& GamePad::operator= (GamePad&& moveFrom) noexcept
 // Public destructor.
 GamePad::~GamePad()
 {
+    pImpl = nullptr;
 }
 
 
