@@ -149,13 +149,13 @@ public:
         {
             if (mGamePad[j])
             {
-                //ComPtr<IGameController> ctrl;
-                //HRESULT hr = mGamePad[j].As(&ctrl);
-                //if (SUCCEEDED(hr) && ctrl)
-                //{
-                //    (void)ctrl->remove_UserChanged(mUserChangeToken[j]);
-                //    mUserChangeToken[j].value = 0;
-                //}
+                ComPtr<IGameController> ctrl;
+                HRESULT hr = mGamePad[j].As(&ctrl);
+                if (SUCCEEDED(hr) && ctrl)
+                {
+                    (void)ctrl->remove_UserChanged(mUserChangeToken[j]);
+                    mUserChangeToken[j].value = 0;
+                }
 
                 mGamePad[j].Reset();
             }
@@ -172,7 +172,7 @@ public:
             mStatics.Reset();
         }
 
-        s_gamePad = nullptr;
+        if (s_gamePad) s_gamePad = nullptr;
     }
 
     void GetState(int player, _Out_ State& state, DeadZone deadZoneMode)
@@ -445,6 +445,7 @@ private:
     }
 
     ComPtr<ABI::Windows::Gaming::Input::IGamepadStatics> mStatics;
+    //std::unique_ptr< ABI::Windows::Gaming::Input::IGamepad> mGamePad[MAX_PLAYER_COUNT];
     ComPtr<ABI::Windows::Gaming::Input::IGamepad> mGamePad[MAX_PLAYER_COUNT];
     EventRegistrationToken mUserChangeToken[MAX_PLAYER_COUNT];
 
@@ -1302,6 +1303,7 @@ GamePad& GamePad::operator= (GamePad&& moveFrom) noexcept
 // Public destructor.
 GamePad::~GamePad()
 {
+    //pImpl->~Impl();
     pImpl = nullptr;
 }
 
