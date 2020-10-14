@@ -490,7 +490,7 @@ std::unique_ptr<SoundEffectInstance> SoundEffect::CreateInstance(SOUND_EFFECT_IN
     auto effect = new SoundEffectInstance(pImpl->mEngine, this, flags);
     assert(effect != nullptr);
     pImpl->mInstances.emplace_back(effect->GetVoiceNotify());
-    return std::unique_ptr<SoundEffectInstance>(effect);
+    return std::make_unique<SoundEffectInstance>(std::move(*effect));
 }
 
 
